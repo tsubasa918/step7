@@ -10,53 +10,65 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::query();
-        if ($request->filled('name')) {
-            $query->where('name', 'like', '%' . $request->name . '%');
-        }
-        if ($request->filled('manufacturer')) {
-            $query->where('company_id', $request->manufacturer);
-        }
-        $products = $query->get();
+        $products = Product::searchProducts($request->name, $request->manufacturer);
         $companies = Company::all();
         return view('products.index', compact('products', 'companies'));
     }
 
     public function destroy($id)
     {
-        Product::find($id)->delete();
-        return redirect()->route('products.index');
+        try {
+            DB::beginTransaction();
+
+            $product = Product::find($id);
+            $product->delete();
+
+            DB::commit();
+            return redirect()->route('products.index');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->withErrors(['error' => 'An unexpected error occurred.']);
+        }
+    }
+}
+class ProductController extends Controller
+{
+    public function create()
+    {
+        $companies = Company::all();
+        return view('products.create', compact('companies'));
     }
 
-    public function create()
-{
-    $companies = Company::all();
-    return view('products.create', compact('companies'));
-}
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'company_id' => 'required|exists:companies,id',
+            'price' => 'required|numeric',
+            'stock' => 'required|integer',
+            'comment' => 'nullable|string',
+            'image' => 'nullable|image'
+        ]);
 
-public function store(Request $request)
-{
-    $request->validate([
-        'name' => 'required|string|max:255',
-        'company_id' => 'required|exists:companies,id',
-        'price' => 'required|numeric',
-        'stock' => 'required|integer',
-        'comment' => 'nullable|string',
-        'image' => 'nullable|image'
-    ]);
+        try {
+            DB::beginTransaction();
 
-    $path = $request->file('image')->store('images', 'public');
+            $path = $request->file('image') ? $request->file('image')->store('images', 'public') : null;
 
-    Product::create([
-        'name' => $request->name,
-        'company_id' => $request->company_id,
-        'price' => $request->price,
-        'stock' => $request->stock,
-        'comment' => $request->comment,
-        'image' => $path,
-    ]);
+            Product::create([
+                'name' => $request->name,
+                'company_id' => $request->company_id,
+                'price' => $request->price,
+                'stock' => $request->stock,
+                'comment' => $request->comment,
+                'image' => $path,
+            ]);
 
-    return redirect()->route('products.index');
-}
-
+            DB::commit();
+            return redirect()->route('products.index');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->withErrors(['error' => 'An unexpected error occurred.']);
+        }
+    }
 }
