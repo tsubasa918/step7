@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Company;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $products = Product::searchProducts($request->name, $request->manufacturer);
+        $products = Product::search($request)->get();
         $companies = Company::all();
         return view('products.index', compact('products', 'companies'));
     }
@@ -20,19 +21,17 @@ class ProductController extends Controller
         try {
             DB::beginTransaction();
 
-            $product = Product::find($id);
+            $product = Product::findOrFail($id);
             $product->delete();
 
             DB::commit();
-            return redirect()->route('products.index');
+            return response()->json(['success' => true]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->withErrors(['error' => 'An unexpected error occurred.']);
+            return response()->json(['success' => false, 'error' => 'An unexpected error occurred.'], 500);
         }
     }
-}
-class ProductController extends Controller
-{
+
     public function create()
     {
         $companies = Company::all();
@@ -70,5 +69,11 @@ class ProductController extends Controller
             DB::rollBack();
             return redirect()->back()->withErrors(['error' => 'An unexpected error occurred.']);
         }
+    }
+
+    public function search(Request $request)
+    {
+        $products = Product::search($request)->get();
+        return response()->json($products);
     }
 }

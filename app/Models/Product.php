@@ -2,34 +2,27 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
 {
-    use HasFactory;
+    protected $fillable = ['name', 'price', 'stock', 'company_id', 'image'];
 
-    protected $fillable = [
-        'name', 'company_id', 'price', 'stock', 'comment', 'image'
-    ];
-
-    public function company()
-    {
-        return $this->belongsTo(Company::class);
-    }
-
-    public static function searchProducts($name = null, $manufacturer = null)
+    public static function search($request)
     {
         $query = self::query();
-
-        if ($name) {
-            $query->where('name', 'like', '%' . $name . '%');
+        if ($request->filled('name')) {
+            $query->where('name', 'like', '%' . $request->name . '%');
         }
-
-        if ($manufacturer) {
-            $query->where('company_id', $manufacturer);
+        if ($request->filled('manufacturer')) {
+            $query->where('company_id', $request->manufacturer);
         }
-
-        return $query->get();
+        if ($request->filled('price_min') && $request->filled('price_max')) {
+            $query->whereBetween('price', [$request->price_min, $request->price_max]);
+        }
+        if ($request->filled('stock_min') && $request->filled('stock_max')) {
+            $query->whereBetween('stock', [$request->stock_min, $request->stock_max]);
+        }
+        return $query;
     }
 }
