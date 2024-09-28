@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Company;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Config; // Configを追加
 
 class ProductController extends Controller
 {
@@ -25,10 +26,10 @@ class ProductController extends Controller
             $product->delete();
 
             DB::commit();
-            return response()->json(['success' => true]);
+            return response()->json(['success' => true, 'message' => Config::get('message.messages.delete_success')]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'error' => 'An unexpected error occurred.'], 500);
+            return response()->json(['success' => false, 'error' => Config::get('message.errors.unexpected')], 500);
         }
     }
 
@@ -67,7 +68,7 @@ class ProductController extends Controller
             return redirect()->route('products.index');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->withErrors(['error' => 'An unexpected error occurred.']);
+            return redirect()->back()->withErrors(['error' => Config::get('message.errors.unexpected')]);
         }
     }
 

@@ -112,7 +112,7 @@
                     if (response.success) {
                         $(`button[data-id="${productId}"]`).closest('tr').remove();
                     } else {
-                        alert('Failed to delete the product.');
+                        alert('{{ config('message.errors.delete_failed') }}');
                     }
                 }
             });
