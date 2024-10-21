@@ -5,34 +5,20 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Product;
-use App\Models\Sale;
-use Illuminate\Support\Facades\DB;
 
 class PurchaseController extends Controller
 {
     public function purchase(Request $request)
     {
+        // リクエストのバリデーション
         $request->validate([
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|integer|min:1',
         ]);
 
         try {
-            DB::transaction(function () use ($request) {
-                $product = Product::findOrFail($request->product_id);
-
-                if ($product->stock < $request->quantity) {
-                    throw new \Exception('Insufficient stock');
-                }
-
-                Sale::create([
-                    'product_id' => $product->id,
-                    'quantity' => $request->quantity,
-                    'total_price' => $product->price * $request->quantity,
-                ]);
-
-                $product->decrement('stock', $request->quantity);
-            });
+            // モデルのメソッドを呼び出して購入処理を行う
+            Product::handlePurchase($request->product_id, $request->quantity);
 
             return response()->json(['success' => true]);
         } catch (\Exception $e) {

@@ -12,8 +12,9 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $products = Product::search($request)->get();
-        $companies = Company::all();
+        // Modelからデータを取得
+        $products = Product::getAllProducts($request);
+        $companies = Company::all(); // Companyは別途Model化されていないため、ここで取得
         return view('products.index', compact('products', 'companies'));
     }
 
@@ -22,8 +23,8 @@ class ProductController extends Controller
         try {
             DB::beginTransaction();
 
-            $product = Product::findOrFail($id);
-            $product->delete();
+            // 削除処理をModelに委譲
+            Product::deleteProductById($id);
 
             DB::commit();
             return response()->json(['success' => true, 'message' => Config::get('message.messages.delete_success')]);
@@ -35,7 +36,7 @@ class ProductController extends Controller
 
     public function create()
     {
-        $companies = Company::all();
+        $companies = Company::all(); // 全企業の取得
         return view('products.create', compact('companies'));
     }
 
@@ -53,9 +54,11 @@ class ProductController extends Controller
         try {
             DB::beginTransaction();
 
+            // 画像のパスを処理
             $path = $request->file('image') ? $request->file('image')->store('images', 'public') : null;
 
-            Product::create([
+            // 新規商品作成をModelに委譲
+            Product::createProduct([
                 'name' => $request->name,
                 'company_id' => $request->company_id,
                 'price' => $request->price,
@@ -74,7 +77,8 @@ class ProductController extends Controller
 
     public function search(Request $request)
     {
-        $products = Product::search($request)->get();
+        // 検索処理をModelに委譲
+        $products = Product::getAllProducts($request);
         return response()->json($products);
     }
 }
