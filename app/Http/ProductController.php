@@ -57,15 +57,18 @@ class ProductController extends Controller
             // 画像のパスを処理
             $path = $request->file('image') ? $request->file('image')->store('images', 'public') : null;
 
-            // 新規商品作成をModelに委譲
-            Product::createProduct([
+            // 配列を一度変数に格納
+            $productData = [
                 'name' => $request->name,
                 'company_id' => $request->company_id,
                 'price' => $request->price,
                 'stock' => $request->stock,
                 'comment' => $request->comment,
                 'image' => $path,
-            ]);
+            ];
+
+            // 新規商品作成をModelに委譲
+            Product::createProduct($productData);
 
             DB::commit();
             return redirect()->route('products.index');
