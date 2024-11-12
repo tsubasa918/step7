@@ -72,9 +72,19 @@ class Product extends Model
             ]);
 
             // 在庫を減らす
-            $product->decrement('stock', $quantity);
+            $product->reduceStock($quantity);
 
             return $product;
         });
+    }
+
+    // 在庫を減らす処理を独立したメソッドに切り出し
+    public function reduceStock($quantity)
+    {
+        if ($this->stock < $quantity) {
+            throw new \Exception('Insufficient stock to reduce');
+        }
+
+        $this->decrement('stock', $quantity);
     }
 }
